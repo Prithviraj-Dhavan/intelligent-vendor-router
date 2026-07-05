@@ -1,0 +1,14 @@
+{
+  "name": "intelligent-vendor-router",
+  "version": "1.0.0",
+  "description": "Intelligent Vendor Routing Platform - routes API requests to the best available third-party vendor based on configurable rules and live performance signals.",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js"
+  },
+  "dependencies": {
+    "express": "^4.19.2",
+    "cors": "^2.8.5"
+  }
+}

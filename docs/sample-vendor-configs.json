@@ -1,0 +1,69 @@
+{
+  "description": "Sample vendor configs for the Intelligent Vendor Routing Platform. POST each object (minus the capability grouping) to /vendors to register it, or run scripts/seed.sh.",
+  "capabilities": {
+    "PAN_VERIFICATION": [
+      {
+        "name": "VendorA",
+        "priority": 1,
+        "weight": 70,
+        "costPerRequest": 1.5,
+        "timeoutMs": 2000,
+        "rateLimitPerMinute": 100,
+        "supportedFeatures": ["PAN_VERIFICATION", "NAME_MATCH"],
+        "simulatedErrorRate": 0.05,
+        "simulatedBaseLatencyMs": 300,
+        "simulatedLatencyJitterMs": 100
+      },
+      {
+        "name": "VendorB",
+        "priority": 2,
+        "weight": 30,
+        "costPerRequest": 1.2,
+        "timeoutMs": 3000,
+        "rateLimitPerMinute": 50,
+        "supportedFeatures": ["PAN_VERIFICATION", "NAME_MATCH"],
+        "simulatedErrorRate": 0.05,
+        "simulatedBaseLatencyMs": 850,
+        "simulatedLatencyJitterMs": 100
+      },
+      {
+        "name": "VendorC",
+        "priority": 3,
+        "weight": 10,
+        "costPerRequest": 0.9,
+        "timeoutMs": 2500,
+        "rateLimitPerMinute": 40,
+        "supportedFeatures": ["PAN_VERIFICATION"],
+        "simulatedErrorRate": 0.15,
+        "simulatedBaseLatencyMs": 500,
+        "simulatedLatencyJitterMs": 400
+      }
+    ],
+    "KYC": [
+      {
+        "name": "TrustKYC",
+        "priority": 1,
+        "weight": 60,
+        "costPerRequest": 2.0,
+        "timeoutMs": 2500,
+        "rateLimitPerMinute": 80,
+        "supportedFeatures": ["KYC", "OCR"],
+        "simulatedErrorRate": 0.03,
+        "simulatedBaseLatencyMs": 400,
+        "simulatedLatencyJitterMs": 150
+      },
+      {
+        "name": "QuickKYC",
+        "priority": 2,
+        "weight": 40,
+        "costPerRequest": 1.3,
+        "timeoutMs": 2000,
+        "rateLimitPerMinute": 100,
+        "supportedFeatures": ["KYC"],
+        "simulatedErrorRate": 0.08,
+        "simulatedBaseLatencyMs": 250,
+        "simulatedLatencyJitterMs": 100
+      }
+    ]
+  }
+}

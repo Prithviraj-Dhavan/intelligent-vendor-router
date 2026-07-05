@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Vendor Router — Control Room</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow bg-glow-1"></div>
+<div class="bg-glow bg-glow-2"></div>
+
+<header class="topbar">
+  <div class="brand">
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none"><path d="M4 12h4l2-7 4 14 2-7h4" stroke="#06201E" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div>
+      <div class="brand-title">Vendor Router</div>
+      <div class="brand-sub">Signal-based dispatch control room</div>
+    </div>
+  </div>
+  <div class="system-pulse">
+    <div class="pulse-item"><span class="dot pulsing" id="healthDot"></span><span id="healthText">checking…</span></div>
+    <div class="pulse-item">Strategy: <strong class="mono strategy-value" id="activeStrategyText">priority</strong></div>
+    <div class="pulse-item mono" id="clock">--:--:--</div>
+  </div>
+</header>
+
+<main>
+  <!-- LEFT: Vendor Registry -->
+  <div class="col" style="--stagger:0">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-eyebrow">Registry</div>
+          <div class="panel-title">Vendors</div>
+        </div>
+        <button class="small" id="btnShowAddVendor">+ Add vendor</button>
+      </div>
+      <div style="margin-bottom:10px;">
+        <input id="capabilityFilter" placeholder="Filter by capability (e.g. PAN_VERIFICATION)" />
+      </div>
+      <div id="vendorList"></div>
+    </div>
+
+    <div class="panel" id="addVendorPanel" style="display:none;">
+      <div class="panel-head">
+        <div class="panel-title">Register vendor</div>
+        <button class="small ghost" id="btnCloseAddVendor">✕</button>
+      </div>
+      <label>Capability</label>
+      <input id="v_capability" placeholder="PAN_VERIFICATION" value="PAN_VERIFICATION" />
+      <label>Name</label>
+      <input id="v_name" placeholder="VendorC" />
+      <div class="field-row">
+        <div><label>Priority</label><input id="v_priority" type="number" value="3" /></div>
+        <div><label>Weight</label><input id="v_weight" type="number" value="10" /></div>
+      </div>
+      <div class="field-row">
+        <div><label>Cost / request (₹)</label><input id="v_cost" type="number" step="0.1" value="1.0" /></div>
+        <div><label>Timeout (ms)</label><input id="v_timeout" type="number" value="2000" /></div>
+      </div>
+      <div class="field-row">
+        <div><label>Rate limit / min</label><input id="v_ratelimit" type="number" value="60" /></div>
+        <div><label>Simulated error rate</label><input id="v_errrate" type="number" step="0.01" value="0.05" /></div>
+      </div>
+      <div class="field-row">
+        <div><label>Sim. base latency (ms)</label><input id="v_lat" type="number" value="400" /></div>
+        <div><label>Sim. latency jitter (ms)</label><input id="v_jitter" type="number" value="200" /></div>
+      </div>
+      <label>Supported features (comma separated)</label>
+      <input id="v_features" placeholder="PAN_VERIFICATION, NAME_MATCH" />
+      <button class="primary full" id="btnSubmitVendor">Register vendor</button>
+    </div>
+  </div>
+
+  <!-- CENTER: Route tester + signature diagram -->
+  <div class="col" style="--stagger:1">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-eyebrow">Signal path</div>
+          <div class="panel-title">Route a request</div>
+        </div>
+        <div class="panel-hint">POST /route</div>
+      </div>
+
+      <div class="strategy-select-row">
+        <div style="flex:1;">
+          <label style="margin:0 0 4px;">Capability</label>
+          <input id="r_capability" value="PAN_VERIFICATION" />
+        </div>
+        <div style="flex:1;">
+          <label style="margin:0 0 4px;">Strategy override</label>
+          <select id="r_strategy">
+            <option value="">— use default —</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div>
+          <label style="margin:0 0 4px;">Payload (JSON)</label>
+          <textarea id="r_payload" rows="3">{"pan":"ABCDE1234F","name":"Rahul Sharma"}</textarea>
+        </div>
+        <div>
+          <label style="margin:0 0 4px;">Requirements (JSON)</label>
+          <textarea id="r_requirements" rows="3">{"maxLatencyMs":2000,"preferLowCost":false}</textarea>
+        </div>
+      </div>
+
+      <div class="btn-row">
+        <button class="primary flex1" id="btnRoute"><span class="btn-label">Send request</span><span class="btn-arrow">→</span></button>
+        <button id="btnLoadTest" title="Fire 12 requests rapidly to see routing adapt live">Burst ×12</button>
+      </div>
+
+      <div class="stage">
+        <div class="stage-scan"></div>
+        <svg id="routeSvg" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg"></svg>
+      </div>
+
+      <div id="reasonBlock"></div>
+      <div id="responseBlock" class="response-block" style="display:none;"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-eyebrow">Audit trail</div>
+          <div class="panel-title">Routing logs</div>
+        </div>
+        <button class="small ghost" id="btnRefreshLogs">Refresh</button>
+      </div>
+      <div class="logs" id="logsList"></div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Metrics + AI -->
+  <div class="col" style="--stagger:2">
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-eyebrow">Live signals</div>
+          <div class="panel-title">Vendor metrics</div>
+        </div>
+        <button class="small ghost" id="btnRefreshMetrics">↻</button>
+      </div>
+      <div id="metricsList"></div>
+    </div>
+
+    <div class="panel">
+      <div class="panel-head">
+        <div>
+          <div class="panel-eyebrow">Bonus</div>
+          <div class="panel-title">AI routing agent</div>
+        </div>
+        <span class="ai-tag" id="aiModeTag">…</span>
+      </div>
+      <div class="section-tabs">
+        <div class="tab active" data-tab="recommend">Recommend</div>
+        <div class="tab" data-tab="explain">Explain</div>
+        <div class="tab" data-tab="generate">Generate config</div>
+      </div>
+
+      <div id="tab-recommend">
+        <p class="panel-hint" style="margin-bottom:10px;">Analyzes live vendor metrics and recommends the best routing strategy.</p>
+        <button class="primary full" id="btnRecommend">Analyze &amp; recommend</button>
+      </div>
+
+      <div id="tab-explain" style="display:none;">
+        <p class="panel-hint" style="margin-bottom:10px;">Explains the most recent routing decision in plain English.</p>
+        <button class="primary full" id="btnExplain">Explain last decision</button>
+      </div>
+
+      <div id="tab-generate" style="display:none;">
+        <label style="margin:0 0 6px;">Describe the routing rule in plain English</label>
+        <textarea id="ai_instruction" rows="3">Use Vendor A for 70% traffic, Vendor B for 30%, but switch to Vendor C if latency crosses 2 seconds or error rate is above 5%.</textarea>
+        <button class="primary full" id="btnGenerateConfig" style="margin-top:8px;">Generate config</button>
+      </div>
+
+      <div id="aiOutput" class="ai-output" style="display:none;"></div>
+    </div>
+  </div>
+</main>
+
+<div class="footer-note">
+  <span>© 2026</span>
+  <span>Intelligent Vendor Routing Platform</span>
+</div>
+
+<div id="toastHost" class="toast-host"></div>
+
+<script src="app.js"></script>
+</body>
+</html>
